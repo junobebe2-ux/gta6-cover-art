@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Shore — GTA-style cover maker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23160a24'/%3E%3Crect x='4' y='4' width='11' height='11' fill='%23ff2d96'/%3E%3Crect x='17' y='4' width='11' height='11' fill='%2300dcdc'/%3E%3Crect x='4' y='17' width='11' height='11' fill='%23ffc44d'/%3E%3Crect x='17' y='17' width='11' height='11' fill='%23ff5da2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="app">
+  <section class="controls" aria-label="Cover editor">
+    <header>
+      <h1>Neon Shore</h1>
+      <p>Your photos, made into a GTA-style cover. Everything runs offline — photos never leave your machine.</p>
+      <button id="surprise" type="button" class="surprise">✦ Surprise me</button>
+    </header>
+
+    <fieldset>
+      <legend>Photos</legend>
+      <label class="file">Add photos <input id="photo" type="file" accept="image/*" multiple></label>
+      <div id="tray" class="tray" aria-label="Photo tray"></div>
+      <button id="loadSamples" type="button" class="ghost">Load the 4 sample photos</button>
+      <p class="hint">Click a tray photo, then a panel, to place it. Or drag a photo onto the cover. Drag on the cover to pan, scroll to zoom.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Preset looks</legend>
+      <div id="presets" class="picks"></div>
+      <p class="hint">One click: layout, grade, lettering and borders, styled to match.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Panels</legend>
+      <div id="panels" class="panels"></div>
+      <label>Zoom <span id="zoomVal">100%</span>
+        <input id="zoom" type="range" min="1" max="4" step="0.05" value="1">
+      </label>
+      <label>Panel border
+        <span id="borders" class="picks"></span>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Layout</legend>
+      <div id="layouts" class="picks"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Grade</legend>
+      <div id="grades" class="picks"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Lettering</legend>
+      <label>Title font
+        <span id="titleFonts" class="picks"></span>
+      </label>
+      <label>Title <input id="title" type="text" maxlength="30" value="NEON SHORE"></label>
+      <label>Subtitle <input id="subtitle" type="text" maxlength="40" value="a Vice City story"></label>
+      <label>Issue line <input id="issueLine" type="text" maxlength="40" value="ISSUE 07 · SOLMAR CITY"></label>
+      <label>Title size <input id="titleSize" type="range" min="0.6" max="1.5" step="0.05" value="1"></label>
+      <label>Title height <input id="titleY" type="range" min="0.55" max="0.95" step="0.01" value="0.86"></label>
+      <label class="check"><input id="goldFoil" type="checkbox"> Gold-foil title + thin gold rule</label>
+      <label>Badge text <input id="badgeText" type="text" maxlength="20" value="SOLMAR CITY"></label>
+      <label>Heat <span id="heatVal">4 ★</span>
+        <input id="heat" type="range" min="0" max="5" step="1" value="4">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Finish</legend>
+      <label class="check"><input id="frame" type="checkbox" checked> White frame</label>
+      <label class="check"><input id="grain" type="checkbox" checked> Film grain</label>
+      <label class="check"><input id="vignette" type="checkbox" checked> Vignette</label>
+      <label class="check"><input id="badge" type="checkbox" checked> Badge ribbon</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Export PNG</legend>
+      <div id="sizes" class="picks"></div>
+      <div class="row">
+        <button id="export" type="button" class="primary">Export PNG</button>
+        <button id="exportAll" type="button">Export all 4 sizes</button>
+      </div>
+      <div class="row">
+        <button id="undo" type="button" disabled>Undo</button>
+        <button id="redo" type="button" disabled>Redo</button>
+      </div>
+    </fieldset>
+
+    <p id="status" role="status"></p>
+  </section>
+  <section class="stage">
+    <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
+  </section>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
