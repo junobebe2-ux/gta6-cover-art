@@ -1,64 +1,59 @@
-// Fixed scenes for screenshots: ?shot=editor shows the editor with photos
-// loaded; ?shot=cover / cover2 / cover3 show finished covers alone.
-// window.__shotReady is set once painted. Query params override
-// title/subtitle/grade/layout for flexibility.
-import { LAYOUTS } from './cover.js';
+// Deterministic shot states: the app reads its state from the URL query
+// string so a screenshot link always renders the same cover. Only values
+// from the app's own tables are accepted; anything else keeps the default.
 
-const SCENES = {
-  // The elegant upgrade on show: Magazine layout, Playfair serif title in
-  // gold foil with the thin gold rule, Rose Gold grade, gold panel borders.
-  cover: {
-    layout: 'magazine', grade: 'rose', title: 'SOLMAR NIGHTS',
-    subtitle: 'a Vice City story', titleFont: 'playfair', goldFoil: true,
-    border: 'gold', issueLine: 'ISSUE 07 · SOLMAR CITY', heat: 4,
-    frame: true, badge: true,
-  },
-  cover2: {
-    layout: 'hero3', grade: 'golden', title: 'PIER PRESSURE',
-    subtitle: 'golden hour in Solmar', titleFont: 'anton', goldFoil: false,
-    border: 'white', heat: 5, frame: true, badge: true,
-  },
-  cover3: {
-    layout: 'tilt', grade: 'noir', title: 'NIGHT SHIFT',
-    subtitle: 'downtown after dark', titleFont: 'anton', goldFoil: false,
-    border: 'white', heat: 3, frame: false, badge: true,
-  },
-  editor: {
-    layout: 'grid4', grade: 'sunset', title: 'BOULEVARD QUEEN',
-    subtitle: 'a Vice City story', titleFont: 'anton', goldFoil: false,
-    border: 'white', heat: 4, frame: true, badge: true,
-  },
-};
+import { LAYOUTS, GRADES, FONTS, BORDERS, EXPORT_SIZES, SAMPLE_PHOTOS } from './cover.js';
 
-export async function runShot(shot, query, state, env) {
-  const scene = SCENES[shot] || SCENES.cover;
-  const canvas = document.getElementById('cover');
-  if (shot !== 'editor') document.body.classList.add('shot-cover');
-  // Scene values, overridable by query params.
-  Object.assign(state, scene, {
-    title: query.get('caption') ?? scene.title,
-    grade: query.get('grade') ?? scene.grade,
-    layout: query.get('layout') ?? scene.layout,
-  });
-  await env.loadSamples();
-  await env.fontsReady;
-  // Fill every panel with the samples in a fixed order (the tray is exposed
-  // on window by main.js).
-  const order = ['neon', 'rooftop', 'pier', 'boulevard'];
-  const n = (LAYOUTS.find((l) => l.id === state.layout) || LAYOUTS[0]).photos;
-  const tray = window.__neonShoreTray || [];
-  state.panels = [];
-  for (let i = 0; i < n; i++) {
-    const s = tray.find((x) => x.id === order[i % order.length]);
-    state.panels.push(s
-      ? { src: s.id, img: s.img, zoom: 1, ox: 0, oy: 0 }
-      : { src: null, img: null, zoom: 1, ox: 0, oy: 0 });
+function pick(value, table, fallback) {
+  return value !== null && Object.hasOwn(table, value) ? value : fallback;
+}
+
+function flag(value, fallback) {
+  if (value === null) return fallback;
+  return value === '1' || value === 'true' || value === 'on';
+}
+
+function num(value, fallback, min, max) {
+  if (value === null) return fallback;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+/**
+ * Apply the query string to a state object and report the mode. `shot`
+ * chooses cover-only (just the poster, for screenshots) or the full editor.
+ * `photo` is a comma list of sample ids, one per panel position.
+ */
+export function applyShotParams(state) {
+  const q = new URLSearchParams(location.search);
+  state.layout = pick(q.get('layout'), LAYOUTS, state.layout);
+  state.grade = pick(q.get('grade'), GRADES, state.grade);
+  state.font = pick(q.get('font'), FONTS, state.font);
+  state.border = pick(q.get('border'), BORDERS, state.border);
+  state.foil = flag(q.get('foil'), state.foil);
+  state.grain = flag(q.get('grain'), state.grain);
+  state.vignette = flag(q.get('vignette'), state.vignette);
+  const size = q.get('size');
+  if (size !== null && EXPORT_SIZES.some((s) => s.id === size)) state.size = size;
+  const caption = q.get('caption');
+  if (caption !== null) state.caption = caption.slice(0, 40);
+  const subtitle = q.get('subtitle');
+  if (subtitle !== null) state.subtitle = subtitle.slice(0, 60);
+  const badge = q.get('badge');
+  if (badge !== null) state.badge = badge.slice(0, 24);
+  state.heat = num(q.get('heat'), state.heat, 0, 5);
+  const photo = q.get('photo');
+  if (photo !== null) {
+    const ids = photo.split(',').map((s) => s.trim()).filter(Boolean);
+    const known = SAMPLE_PHOTOS.map((p) => p.id);
+    const chosen = ids.filter((id) => known.includes(id));
+    if (chosen.length > 0) {
+      for (let i = 0; i < state.photos.length; i++) {
+        state.photos[i] = chosen[i % chosen.length];
+      }
+    }
   }
-  if (shot !== 'editor') {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  env.redraw();
-  env.setStatus(`Shot: ${shot} — ${state.title}.`);
-  requestAnimationFrame(() => requestAnimationFrame(() => { window.__shotReady = true; }));
+  const shot = q.get('shot');
+  return { mode: shot === 'cover' ? 'cover' : 'editor' };
 }
